@@ -2,88 +2,61 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Parse (parseFile) where
 
-import Text.Parsec (Parsec, chainr1, string, spaces, between, chainl1, satisfy, choice, notFollowedBy, many, ParseError, runParser, eof)
+import qualified Text.Megaparsec as M
+import qualified Text.Megaparsec.Char as C
+import qualified Text.Megaparsec.Char.Lexer as L
 
+import Control.Monad.Combinators.Expr
+
+import Data.Void (Void)
+import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Char (isAsciiUpper, isAsciiLower, isDigit)
 
 import Syntax
 
-data Nat = Z | S Nat
-  deriving (Eq)
+type Parser = M.Parsec Void Text
 
-data CommentState
-  = Code
-  | Line
-  | Block Nat
-  deriving (Eq)
+spaces :: Parser ()
+spaces = L.space C.space1
+  (L.skipLineComment "--")
+  (L.skipBlockCommentNested "[-" "-]")
 
-removeComments :: String -> String
-removeComments = recurse Code
-  where
-    recurse state = \case
-      '-':'-':s -> recurse (lineStart state) s
-      '\n':s -> '\n' : recurse (lineEnd state) s
-      '[':'-':s -> recurse (blockStart state) s
-      '-':']':s -> ' ' : recurse (blockEnd state) s
-      c:s | state == Code -> c : recurse state s
-          | otherwise -> recurse state s
-      [] -> []
-
-    lineStart = \case
-      Code -> Line
-      state -> state
-
-    lineEnd = \case
-      Line -> Code
-      state -> state
-
-    blockStart = \case
-      Code -> Block Z
-      Block n -> Block (S n)
-      state -> state
-
-    blockEnd = \case
-      Block Z -> Code
-      Block (S n) -> Block n
-      state -> state
-
-type Parser = Parsec String ()
-
-infixl 5 |.
-(|.) :: Applicative f => f a -> f b -> f a
-(|.) = (<*)
-
-constant :: a -> String -> Parser a
-constant x s = string s >> spaces >> return x
-
-symbol :: String -> Parser ()
-symbol = constant ()
+symbol :: Text -> Parser ()
+symbol s = M.chunk s >> spaces
 
 parens :: Parser a -> Parser a
-parens = between (symbol "(") (symbol ")")
+parens = M.between (symbol "(") (symbol ")")
 
 squares :: Parser a -> Parser a
-squares = between (symbol "[") (symbol "]")
+squares = M.between (symbol "[") (symbol "]")
 
-nameStart :: Parser Char
-nameStart = satisfy \c -> isAsciiUpper c || isAsciiLower c
+nameStart :: Char -> Bool
+nameStart c = isAsciiUpper c || isAsciiLower c
 
-nameChar :: Parser Char
-nameChar = satisfy \c -> isAsciiUpper c || isAsciiLower c || isDigit c
+nameChar :: Char -> Bool
+nameChar c = isAsciiUpper c || isAsciiLower c || isDigit c
 
-parseName :: [String] -> Parser String
+parseName :: [Text] -> Parser Text
 parseName reserved = do
-  notFollowedBy (choice (map string reserved) >> notFollowedBy nameChar)
-  (:) <$> nameStart <*> many nameChar |. spaces
+  M.notFollowedBy (M.choice (map reservedWord reserved))
+  c <- M.satisfy nameStart
+  s <- M.takeWhileP Nothing nameChar
+  spaces
+  return (Text.cons c s)
+  where
+    reservedWord :: Text -> Parser ()
+    reservedWord r = M.chunk r >> M.notFollowedBy (M.satisfy nameChar)
 
-keywords :: [String]
+keywords :: [Text]
 keywords = [ "val", "type", "in" ]
 
-typeConstants :: Map String (Parser TConst)
+typeConstants :: Map Text (Parser TConst)
 typeConstants = Map.fromList
   [ ("forall", Forall <$> squares parseKind)
   , ("arrow", return Arrow)
@@ -95,7 +68,7 @@ typeConstants = Map.fromList
   , ("infvariant", return InfVariant)
   ]
 
-termConstants :: Map String (Parser Const)
+termConstants :: Map Text (Parser Const)
 termConstants = Map.fromList
   [ ("unit", return Unit)
   , ("project", return Project)
@@ -107,7 +80,7 @@ termConstants = Map.fromList
   , ("destruct", return Destruct)
   ]
 
-nameParser :: Map String (Parser c) -> (String -> a) -> (c -> a) -> Parser a
+nameParser :: Map Text (Parser c) -> (Text -> a) -> (c -> a) -> Parser a
 nameParser constants var con = do
   name <- parseName keywords
   case Map.lookup name constants of
@@ -127,44 +100,43 @@ parseNameTerm :: Parser Term
 parseNameTerm = nameParser termConstants (Var . V) Const
 
 parseKind :: Parser Kind
-parseKind = chainr1 factor (constant (~>) "->")
+parseKind = makeExprParser factor
+  [ [ InfixR ((~>) <$ symbol "->") ] ]
   where
-    factor = choice
-      [ constant KType "Type"
-      , constant KRow "Row"
-      , constant KLabel "Label"
+    factor = M.choice
+      [ KType <$ symbol "Type"
+      , KRow <$ symbol "Row"
+      , KLabel <$ symbol "Label"
       , parens parseKind
       ]
 
 parseType :: Parser Type
-parseType = chainr1 factor (constant (~>) "->")
+parseType = makeExprParser factor
+  [ [ InfixL (return TApp) ]
+  , [ InfixR ((~>) <$ symbol "->") ]
+  ]
   where
-    factor = chainl1 appFactor (return TApp)
-
-    appFactor = choice
+    factor = M.choice
       [ parseNameType
-      , pure TLam |. symbol "\\" <*> parseTVar |. symbol ":" <*> parseKind |. symbol "." <*> parseType
-      , pure (TConst . Label . Lab) |. symbol "'" <*> parseName []
+      , TLam <$ symbol "\\" <*> parseTVar <* symbol ":" <*> parseKind <* symbol "." <*> parseType
+      , (TConst . Label . Lab) <$ symbol "'" <*> parseName []
       , parens parseType
       ]
 
 parseTerm :: Parser Term
 parseTerm = do
-  func <- appFactor
-  args <- many argument
+  func <- factor
+  args <- M.many argument
   return $ foldl (\f -> either (AppT f) (App f)) func args
   where
-    argument = choice
-      [ Left <$> squares parseType
-      , Right <$> appFactor
-      ]
+    argument = M.eitherP (squares parseType) factor
 
-    appFactor = choice
+    factor = M.choice
       [ parseNameTerm
-      , pure Lam |. symbol "\\" <*> parseVar |. symbol ":" <*> parseType |. symbol "." <*> parseTerm
-      , pure LamT |. symbol "/\\" <*> parseTVar |. symbol ":" <*> parseKind |. symbol "." <*> parseTerm
+      , Lam <$ symbol "\\" <*> parseVar <* symbol ":" <*> parseType <* symbol "." <*> parseTerm
+      , LamT <$ symbol "/\\" <*> parseTVar <* symbol ":" <*> parseKind <* symbol "." <*> parseTerm
       , parens parseTerm
       ]
 
-parseFile :: String -> Either ParseError Term
-parseFile = runParser (spaces >> parseTerm |. eof) () "test.lune" . removeComments
+parseFile :: Text -> Either (M.ParseErrorBundle Text Void) Term
+parseFile = M.runParser (spaces >> parseTerm <* M.eof) "test.lune"

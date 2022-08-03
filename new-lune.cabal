@@ -34,6 +34,8 @@ executable system-f-omega
     build-depends:    base ^>=4.14.1.0,
                       containers,
                       mtl,
-                      parsec
+                      text,
+                      megaparsec,
+                      parser-combinators
     hs-source-dirs:   app
     default-language: Haskell2010
