@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE EmptyCase #-}
-module Syntax where
+module Syntax.Core where
 
 import Data.Text (Text, pack)
 import Data.String (IsString(fromString))

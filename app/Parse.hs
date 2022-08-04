@@ -18,7 +18,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Char (isAsciiUpper, isAsciiLower, isDigit)
 
-import Syntax
+import Syntax.Core
 
 type Parser = M.Parsec Void Text
 
