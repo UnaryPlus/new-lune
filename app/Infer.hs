@@ -13,6 +13,7 @@ import Control.Monad.State (MonadState, evalStateT)
 import qualified Control.Monad.State as State
 import Control.Monad.Except (MonadError, throwError)
 
+import Syntax.Common
 import Syntax.Core
 
 constKind :: TConst -> Kind

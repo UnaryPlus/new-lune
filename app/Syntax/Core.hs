@@ -7,8 +7,7 @@ module Syntax.Core where
 import Data.Text (Text, pack)
 import Data.String (IsString(fromString))
 
-newtype Label = Lab Text
-  deriving (Eq)
+import Syntax.Common
 
 data TVar
   = TV Text
@@ -18,30 +17,11 @@ data TVar
 newtype Var = V Text
   deriving (Eq, Ord)
 
-data Kind
-  = KType
-  | KRow
-  | KLabel
-  | KArrow Kind Kind
-  deriving (Eq)
-
 data Type
   = TConst TConst
   | TVar TVar
   | TLam TVar Kind Type
   | TApp Type Type
-  deriving (Eq)
-
-data TConst
-  = Forall Kind
-  | Arrow
-  | Label Label
-  | Nil
-  | Cons
-  | Record
-  | Variant
-  | InfRecord
-  | InfVariant
   deriving (Eq)
 
 data Term
@@ -51,16 +31,6 @@ data Term
   | App Term Term
   | LamT TVar Kind Term
   | AppT Term Type
-
-data Const
-  = Unit
-  | Project
-  | Delete
-  | Construct
-  | Absurd
-  | Inject
-  | Embed
-  | Destruct
 
 infixr 9 ~>
 class Function a where

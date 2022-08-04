@@ -4,7 +4,7 @@ import qualified Data.Text.IO as IO
 
 import Parse (parseFile)
 import Infer (runInfer)
-import Syntax.Core
+import Syntax.Core (pretty)
 
 -- M.ParseErrorBundle Text Void
 
