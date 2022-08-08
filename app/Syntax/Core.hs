@@ -32,12 +32,27 @@ data Term
   | LamT TVar Kind Term
   | AppT Term Type
 
-infixr 9 ~>
-class Function a where
-  (~>) :: a -> a -> a
+data TConst
+  = Forall Kind
+  | Arrow
+  | Label Label
+  | Nil
+  | Cons
+  | Record
+  | Variant
+  | InfRecord
+  | InfVariant
+  deriving (Eq)
 
-instance Function Kind where
-  (~>) = KArrow
+data Const
+  = Unit
+  | Project
+  | Delete
+  | Construct
+  | Absurd
+  | Inject
+  | Embed
+  | Destruct
 
 instance Function Type where
   (~>) t1 t2 = TApp (TApp (TConst Arrow) t1) t2

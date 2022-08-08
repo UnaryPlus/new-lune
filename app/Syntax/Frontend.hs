@@ -1,6 +1,7 @@
 module Syntax.Frontend where
 
 import Data.Text (Text)
+import Data.List.NonEmpty (NonEmpty)
 
 import Syntax.Common
 
@@ -8,31 +9,30 @@ newtype Var = V Text
 
 newtype TVar = TV Text
 
-data Fixity
-  = Infix Double
-  | Infixl Double
-  | Infixr Double
+type TParam = (NonEmpty TVar, Maybe Kind)
 
 data Param
-  = TypeParam TVar Kind
-  | TermParam Var Type
-
-data Arg
-  = TypeArg (Maybe TVar) Type
-  | TermArg Term
+  = TypeParam (NonEmpty TVar, Maybe Kind)
+  | TermParam (NonEmpty Var, Maybe Type)
 
 data Def
-  = TypeDef (Maybe Fixity) TVar [(TVar, Kind)] (Maybe Kind) Type
-  | FuncDef (Maybe Fixity) Var [Param] (Maybe Type) Term
+  = TypeDef TVar [TParam] (Maybe Kind) Type
+  | TermDef Var [Param] (Maybe Type) Term
 
 data Type
-  = TConst TConst
-  | TVar TVar
-  | TLam [(TVar, Kind)] Type
-  | TApp [Type]
+  = TVar TVar
+  | TLabel Label
+  | TLam (NonEmpty TParam) Type
+  | TForall (NonEmpty TParam) Type
+  | TApp Type Type
+  | TInfixApp TVar Type Type
 
 data Term
-  = Const Const
-  | Var Var
-  | Lam [Param] Term
-  | App Term [Arg]
+  = Var Var
+  | Label Label
+  | Get Term Label
+  | Lam (NonEmpty Param) Term
+  | Let (NonEmpty Def) Term
+  | App Term Term
+  | AppT Term (Maybe TVar, Type)
+  | InfixApp Var Term Term

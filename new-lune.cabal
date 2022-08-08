@@ -23,7 +23,7 @@ extra-source-files: CHANGELOG.md
 
 executable system-f-omega
     main-is:          Main.hs
-    other-modules:    Parse, Infer,
+    other-modules:    Compiler.Infer, Compiler.Parse,
                       Syntax.Common, Syntax.Frontend, Syntax.Core
     ghc-options:      -Wall
 

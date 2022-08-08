@@ -12,24 +12,9 @@ data Kind
   | KArrow Kind Kind
   deriving (Eq)
 
-data TConst
-  = Forall Kind
-  | Arrow
-  | Label Label
-  | Nil
-  | Cons
-  | Record
-  | Variant
-  | InfRecord
-  | InfVariant
-  deriving (Eq)
+infixr 9 ~>
+class Function a where
+  (~>) :: a -> a -> a
 
-data Const
-  = Unit
-  | Project
-  | Delete
-  | Construct
-  | Absurd
-  | Inject
-  | Embed
-  | Destruct
+instance Function Kind where
+  (~>) = KArrow

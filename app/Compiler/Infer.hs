@@ -3,7 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Infer (runInfer) where
+module Compiler.Infer (runInfer) where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
