@@ -2,7 +2,19 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE EmptyCase #-}
-module Syntax.Core where
+module Syntax.Core
+  ( module Syntax.Common
+  , TVar(..)
+  , Var(..)
+  , Type(.., TApp2, TApp3)
+  , Term(..)
+  , TConst(..)
+  , Const(..)
+  , Function(..)
+  , forall
+  , Error(..)
+  )
+  where
 
 import Data.Text (Text, pack)
 import Data.String (IsString(fromString))
@@ -53,6 +65,13 @@ data Const
   | Inject
   | Embed
   | Destruct
+
+infixr 9 ~>
+class Function a where
+  (~>) :: a -> a -> a
+
+instance Function Kind where
+  (~>) = KArrow
 
 instance Function Type where
   (~>) t1 t2 = TApp (TApp (TConst Arrow) t1) t2

@@ -11,10 +11,3 @@ data Kind
   | KLabel
   | KArrow Kind Kind
   deriving (Eq)
-
-infixr 9 ~>
-class Function a where
-  (~>) :: a -> a -> a
-
-instance Function Kind where
-  (~>) = KArrow

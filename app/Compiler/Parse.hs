@@ -20,7 +20,6 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Char (isAsciiUpper, isAsciiLower, isDigit)
 
-import Syntax.Common
 import Syntax.First
 
 type Parser = Parsec Void Text
@@ -81,7 +80,7 @@ ending s p = optional (reservedInfix s >> p)
 
 parseKind :: Parser Kind
 parseKind = makeExprParser factor
-  [ [ InfixR ((~>) <$ reservedInfix "->") ] ]
+  [ [ InfixR (KArrow <$ reservedInfix "->") ] ]
   where
     factor = choice
       [ KType <$ reservedPrefix "Type"

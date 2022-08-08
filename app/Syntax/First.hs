@@ -1,4 +1,16 @@
-module Syntax.First where
+module Syntax.First
+  ( module Syntax.Common
+  , Var(..)
+  , TVar(..)
+  , TParam
+  , Param(..)
+  , Def(..)
+  , Type(..)
+  , EnvItem(..)
+  , Env
+  , Term(..)
+  )
+  where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
