@@ -13,8 +13,7 @@ module Syntax.Core
   , Function(..)
   , forall
   , Error(..)
-  )
-  where
+  ) where
 
 import Data.Text (Text, pack)
 import Data.String (IsString(fromString))
@@ -24,9 +23,6 @@ import Syntax.Common
 data TVar
   = TV Text
   | TVF Int
-  deriving (Eq, Ord)
-
-newtype Var = V Text
   deriving (Eq, Ord)
 
 data Type

@@ -9,15 +9,12 @@ module Syntax.First
   , EnvItem(..)
   , Env
   , Term(..)
-  )
-  where
+  ) where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
 
 import Syntax.Common
-
-newtype Var = V Text
 
 newtype TVar = TV Text
 

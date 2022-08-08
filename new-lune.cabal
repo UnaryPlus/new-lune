@@ -23,8 +23,8 @@ extra-source-files: CHANGELOG.md
 
 executable system-f-omega
     main-is:          Main.hs
-    other-modules:    Compiler.Infer, Compiler.Parse,
-                      Syntax.Common, Syntax.First, Syntax.Core
+    other-modules:    Compiler.Infer, Compiler.Parse, Compiler.Translate,
+                      Syntax.Common, Syntax.First, Syntax.Second, Syntax.Core
     ghc-options:      -Wall
 
     -- Modules included in this executable, other than Main.
