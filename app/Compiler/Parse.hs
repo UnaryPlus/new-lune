@@ -18,8 +18,6 @@ import Data.Void (Void)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Text (Text)
 import qualified Data.Text as Text
-import Data.Map (Map)
-import qualified Data.Map as Map
 import Data.Char (isAsciiUpper, isAsciiLower, isDigit)
 
 import Syntax.Common
@@ -35,10 +33,9 @@ spaces = L.space C.space1
 symbol :: Text -> Parser ()
 symbol s = chunk s >> spaces
 
-parens, squares, backticks, quotes :: Parser a -> Parser a
+parens, squares, quotes :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 squares = between (symbol "[") (symbol "]")
-backticks = between (symbol "`") (symbol "`")
 quotes = between (symbol "'") (symbol "'")
 
 infixChar, prefixHead, prefixTail :: Char -> Bool
@@ -77,9 +74,6 @@ prefixName = do
 
 anyName :: Parser Text
 anyName = infixName <|> prefixName
-
-infixOp :: Parser Text
-infixOp = infixName <|> backticks prefixName
 
 annotation :: Parser a -> Parser (Maybe a)
 annotation p = optional (reservedInfix ":" >> p)
@@ -127,7 +121,7 @@ chain op left right = apply =<< left
 
 parseType :: Parser Type
 parseType = makeExprParser factor
-  [ [ InfixR (TInfixApp . TV <$> infixOp) ] ]
+  [ [ InfixR (TInfixApp . TV <$> infixName) ] ]
   where
     factor = chain (return TApp)
       (appFactor anyName)
@@ -143,7 +137,7 @@ parseType = makeExprParser factor
 
 parseTerm :: Parser Term
 parseTerm = makeExprParser factor
-  [ [ InfixR (InfixApp . V <$> infixOp) ] ]
+  [ [ InfixR (InfixApp . V <$> infixName) ] ]
   where
     factor = chain (return \f -> either (App f) (AppT f))
       (appFactor anyName)
