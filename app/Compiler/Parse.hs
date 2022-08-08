@@ -11,7 +11,7 @@ import qualified Text.Megaparsec.Char as C
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Control.Monad.Combinators ((<|>), between, choice, optional, many, eitherP)
-import Control.Monad.Combinators.NonEmpty (some)
+import Control.Monad.Combinators.NonEmpty (some, sepBy1)
 import Control.Monad.Combinators.Expr
 
 import Data.Void (Void)
@@ -33,9 +33,10 @@ spaces = L.space C.space1
 symbol :: Text -> Parser ()
 symbol s = chunk s >> spaces
 
-parens, squares, quotes :: Parser a -> Parser a
+parens, squares, braces, quotes :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 squares = between (symbol "[") (symbol "]")
+braces = between (symbol "{") (symbol "}")
 quotes = between (symbol "'") (symbol "'")
 
 infixChar, prefixHead, prefixTail :: Char -> Bool
@@ -57,7 +58,7 @@ reservedPrefix s = do
 
 infixName :: Parser Text
 infixName = do
-  let keywords = [ "\\", "=", ":" ]
+  let keywords = [ "\\", "=", ":", "|" ]
   notFollowedBy (choice (map reservedInfix keywords))
   s <- takeWhile1P Nothing infixChar
   spaces
@@ -75,8 +76,8 @@ prefixName = do
 anyName :: Parser Text
 anyName = infixName <|> prefixName
 
-annotation :: Parser a -> Parser (Maybe a)
-annotation p = optional (reservedInfix ":" >> p)
+ending :: Text -> Parser a -> Parser (Maybe a)
+ending s p = optional (reservedInfix s >> p)
 
 parseKind :: Parser Kind
 parseKind = makeExprParser factor
@@ -101,7 +102,7 @@ generalParam makeVar ty brackets required
   where
     var = makeVar <$> anyName
     bare = (\x -> (x :| [], Nothing)) <$> var
-    inBrackets = brackets ((,) <$> some var <*> annotation ty)
+    inBrackets = brackets ((,) <$> some var <*> ending ":" ty)
 
 parseTParam :: Parser TParam
 parseTParam = generalParam TV parseKind parens False
@@ -112,18 +113,18 @@ parseParam = choice
   , TermParam <$> generalParam V parseType parens False
   ]
 
-chain :: Parser (a -> b -> a) -> Parser a -> Parser b -> Parser a
+chain :: (a -> b -> a) -> Parser a -> Parser b -> Parser a
 chain op left right = apply =<< left
   where
-    apply l =
-      do { f <- op; r <- right; apply (f l r) }
-      <|> return l
+    apply x =
+      (apply . op x =<< right)
+      <|> return x
 
 parseType :: Parser Type
 parseType = makeExprParser factor
   [ [ InfixR (TInfixApp . TV <$> infixName) ] ]
   where
-    factor = chain (return TApp)
+    factor = chain TApp
       (appFactor anyName)
       (appFactor prefixName)
 
@@ -135,17 +136,28 @@ parseType = makeExprParser factor
       , parens parseType
       ]
 
+parseEnv :: Parser Env
+parseEnv = braces $ (,)
+  <$> sepBy1 parseEnvItem (symbol ",")
+  <*> ending "|" parseTerm
+
+parseEnvItem :: Parser EnvItem
+parseEnvItem = choice
+  [ Cons <$> parseTerm <*> ending "=" parseTerm
+  , Shorthand <$ reservedInfix "=" <*> anyName
+  ]
+
 parseTerm :: Parser Term
 parseTerm = makeExprParser factor
   [ [ InfixR (InfixApp . V <$> infixName) ] ]
   where
-    factor = chain (return \f -> either (App f) (AppT f))
+    factor = chain (\f -> either (App f) (AppT f))
       (appFactor anyName)
       (eitherP (appFactor prefixName) typeArg)
 
-    appFactor name = chain (Get <$ symbol ".")
+    appFactor name = chain (\x -> either (Get x) (Env x))
       (getFactor name)
-      (Lab <$> anyName)
+      (eitherP (Lab <$ symbol "." <*> anyName) parseEnv)
 
     getFactor name = choice
       [ Var . V <$> name
@@ -166,7 +178,7 @@ parseTerm = makeExprParser factor
 parseDef :: Parser Def
 parseDef = choice
   [ TypeDef <$ reservedPrefix "type" <*> (TV <$> anyName) <*> many parseTParam
-    <*> annotation parseKind <* reservedInfix "=" <*> parseType
+    <*> ending ":" parseKind <* reservedInfix "=" <*> parseType
   , TermDef <$ reservedPrefix "func" <*> (V <$> anyName) <*> many parseParam
-    <*> annotation parseType <* reservedInfix "=" <*> parseTerm
+    <*> ending ":" parseType <* reservedInfix "=" <*> parseTerm
   ]

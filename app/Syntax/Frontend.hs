@@ -27,12 +27,19 @@ data Type
   | TApp Type Type
   | TInfixApp TVar Type Type
 
+data EnvItem
+  = Cons Term (Maybe Term)
+  | Shorthand Text
+
+type Env = (NonEmpty EnvItem, Maybe Term)
+
 data Term
   = Var Var
   | Label Label
-  | Get Term Label
   | Lam (NonEmpty Param) Term
   | Let (NonEmpty Def) Term
+  | Get Term Label
+  | Env Term Env
   | App Term Term
   | AppT Term (Maybe TVar, Type)
   | InfixApp Var Term Term

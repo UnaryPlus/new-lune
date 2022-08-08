@@ -1,6 +1,5 @@
-1. add environments to frontend syntax
-2. create desugarer
-3. add implicit arguments and untyped lambda to core syntax
+1. create desugarer
+2. add implicit arguments and untyped lambda to core syntax
    (update inference algorithm)
-4. create double-checker
-5. module system (open and import statements)
+3. create double-checker
+4. module system (open and import statements)
