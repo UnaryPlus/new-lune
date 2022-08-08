@@ -4,7 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Parse {-(parseFile)-} where
+module Compiler.Parse {-(parseFile)-} where
 
 import Text.Megaparsec (Parsec, chunk, notFollowedBy, satisfy, try, takeWhileP, takeWhile1P)
 import qualified Text.Megaparsec.Char as C
@@ -21,7 +21,7 @@ import qualified Data.Text as Text
 import Data.Char (isAsciiUpper, isAsciiLower, isDigit)
 
 import Syntax.Common
-import Syntax.Frontend
+import Syntax.First
 
 type Parser = Parsec Void Text
 

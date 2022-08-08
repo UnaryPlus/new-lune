@@ -1,4 +1,4 @@
-module Syntax.Frontend where
+module Syntax.First where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
