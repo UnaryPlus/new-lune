@@ -6,10 +6,13 @@ module Syntax.Second
   , Def(..)
   , Type(..)
   , Term(..)
+  , app2
+  , app3
   ) where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
+import Data.String (IsString(fromString))
 
 import Syntax.Common
 
@@ -39,3 +42,18 @@ data Term
   | Get Term Label
   | App Term Term
   | AppT Term (Maybe TVar, Type)
+
+app2 :: Term -> Term -> Term -> Term
+app2 f x = App (App f x)
+
+app3 :: Term -> Term -> Term -> Term -> Term
+app3 f x y = App (app2 f x y)
+
+instance IsString TVar where
+  fromString = TV . fromString
+
+instance IsString Type where
+  fromString = TVar . fromString
+
+instance IsString Term where
+  fromString = Var . fromString
