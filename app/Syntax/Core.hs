@@ -1,3 +1,5 @@
+{- THIS FILE IS DEPRECATED -}
+
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
