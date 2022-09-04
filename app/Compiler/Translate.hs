@@ -4,6 +4,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Compiler.Translate where
 
+import Data.List.NonEmpty (toList)
+
 import qualified Syntax.First as F
 import Syntax.Second
 
@@ -70,7 +72,7 @@ instance Translate F.Term Term where
     F.Var x -> Var x
     F.Label l -> Label l
     F.Lam ps e -> foldr lambda (translate e) ps
-    F.Let defs e -> Let (fmap translate defs) (translate e)
+    F.Let defs e -> Let (translate <$> toList defs) (translate e)
     F.Get e l -> Get (translate e) l
     F.Env e env -> expandEnv e env
     F.App f e -> App (translate f) (translate e)

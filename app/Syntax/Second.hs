@@ -11,12 +11,12 @@ module Syntax.Second
   ) where
 
 import Data.Text (Text)
-import Data.List.NonEmpty (NonEmpty)
 import Data.String (IsString(fromString))
 
 import Syntax.Common
 
 newtype TVar = TV Text
+  deriving (Eq, Ord)
 
 type TParam = (TVar, Maybe Kind)
 
@@ -38,7 +38,7 @@ data Term
   | Label Label
   | Lam Param Term
   | LamT TParam Term
-  | Let (NonEmpty Def) Term
+  | Let [Def] Term
   | Get Term Label
   | App Term Term
   | AppT Term (Maybe TVar, Type)

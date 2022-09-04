@@ -13,7 +13,7 @@ version:            0.1.0.0
 
 -- The license under which the package is released.
 -- license:
-author:             UnaryPlus
+author:             Owen Bechtel
 maintainer:         ombspring@gmail.com
 
 -- A copyright notice.
@@ -23,7 +23,7 @@ extra-source-files: CHANGELOG.md
 
 executable system-f-omega
     main-is:          Main.hs
-    other-modules:    Compiler.Infer, Compiler.Parse, Compiler.Translate,
+    other-modules:    Compiler.Infer, Compiler.Parse, Compiler.Translate, Compiler.Arrange,
                       Syntax.Common, Syntax.First, Syntax.Second, Syntax.Core
     ghc-options:      -Wall
 
